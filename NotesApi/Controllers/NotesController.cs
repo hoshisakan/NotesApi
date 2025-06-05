@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NotesApi.Data;
 using NotesApi.Models;
+using NotesApi.Services.IService;
 
 namespace NotesApi.Controllers;
 
@@ -11,21 +12,21 @@ namespace NotesApi.Controllers;
 [Route("api/[controller]")]
 public class NotesController : ControllerBase
 {
-    private readonly NotesContext _context;
+    private readonly INoteService _noteService;
 
-    public NotesController(NotesContext context)
+    public NotesController(INoteService noteService)
     {
-        _context = context;
+        _noteService = noteService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Note>>> GetNotes() =>
-        await _context.Notes.ToListAsync();
+    public async Task<ActionResult<List<Note>>> GetNotes() =>
+        await _noteService.GetAllNotesAsync();
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Note>> GetNote(int id)
     {
-        var note = await _context.Notes.FindAsync(id);
+        var note = await _noteService.GetNoteByIdAsync(id);
         return note == null ? NotFound() : note;
     }
 
@@ -40,8 +41,7 @@ public class NotesController : ControllerBase
 
         note.UserId = int.Parse(userIdClaim.Value);
 
-        _context.Notes.Add(note);
-        await _context.SaveChangesAsync();
+        await _noteService.CreateNoteAsync(note);
 
         return CreatedAtAction(nameof(GetNote), new { id = note.Id }, note);
     }
@@ -51,52 +51,36 @@ public class NotesController : ControllerBase
     public async Task<IActionResult> UpdateNote(int id, [FromBody] Note updatedNote)
     {
         if (id != updatedNote.Id)
-            return BadRequest("Note ID mismatch.");
+        return BadRequest("Note ID mismatch.");
 
-        // 從 JWT 取得當前 UserId
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null)
             return Unauthorized();
 
         int userId = int.Parse(userIdClaim.Value);
 
-        // 找出欲更新的 Note 且必須是該使用者擁有的
-        var note = await _context.Notes
-            .Where(n => n.Id == id && n.UserId == userId)
-            .FirstOrDefaultAsync();
+        var result = await _noteService.UpdateNoteAsync(userId, updatedNote);
 
-        if (note == null)
+        if (!result)
             return NotFound();
-
-        // 更新可修改欄位
-        note.Title = updatedNote.Title;
-        note.Content = updatedNote.Content;
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!_context.Notes.Any(n => n.Id == id && n.UserId == userId))
-                return NotFound();
-            else
-                throw;
-        }
 
         return NoContent();
     }
 
 
-    [Authorize]  // 需要驗證
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteNote(int id)
     {
-        var note = await _context.Notes.FindAsync(id);
-        if (note == null) return NotFound();
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
 
-        _context.Notes.Remove(note);
-        await _context.SaveChangesAsync();
-        return NoContent();
+        int userId = int.Parse(userIdClaim.Value);
+
+        var result = await _noteService.DeleteNoteAsync(id, userId);
+        if (!result)
+            return NotFound();
+
+        return NoContent(); // 204 成功刪除
     }
 }

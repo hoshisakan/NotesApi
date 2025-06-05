@@ -3,6 +3,10 @@ using NotesApi.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using NotesApi.Repositories.IRepositories;
+using NotesApi.Repositories;
+using NotesApi.Services.IService;
+using NotesApi.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,7 +41,15 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
 });
+// Repository + UnitOfWork
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<INoteRepository, NoteRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+// Service 層
+builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
