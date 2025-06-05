@@ -17,9 +17,9 @@ public class AuthController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly IConfiguration _config;
-    private readonly JwtService _jwtService;
+    private readonly IJwtService _jwtService;
 
-    public AuthController(IUserService userService, IConfiguration config, JwtService jwtService)
+    public AuthController(IUserService userService, IConfiguration config, IJwtService jwtService)
     {
         _userService = userService;
         _config = config;
