@@ -1,4 +1,4 @@
 dotnet restore
-dotnet ef migrations add UpdateUserTable
+dotnet ef migrations add UpdateSchemaSetting
 dotnet ef database update
 dotnet run

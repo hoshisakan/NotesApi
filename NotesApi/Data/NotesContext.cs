@@ -12,4 +12,10 @@ public class NotesContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<User> Users { get; set; }
 
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasDefaultSchema("dev");
+
+        base.OnModelCreating(modelBuilder);
+    }
 }
