@@ -12,17 +12,22 @@ namespace NotesApi.Controllers;
 [Route("api/[controller]")]
 public class NotesController : ControllerBase
 {
+    private readonly ILogger<NotesController> _logger;
     private readonly INoteService _noteService;
 
-    public NotesController(INoteService noteService)
+    public NotesController(INoteService noteService, ILogger<NotesController> logger)
     {
+        _logger = logger;
         _noteService = noteService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Note>>> GetNotes() =>
-        await _noteService.GetAllNotesAsync();
-
+    public async Task<ActionResult<List<Note>>> GetNotes()
+    {
+        _logger.LogInformation("這是一筆從 Controller 發出的 Log 訊息！");
+        return await _noteService.GetAllNotesAsync();
+    }
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<Note>> GetNote(int id)
     {

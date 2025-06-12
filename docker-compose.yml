@@ -1,5 +1,47 @@
 version: '3.9'
 services:
+    backend:
+        build:
+            # context: ./conf/dotnet/ubuntu
+            context: ./
+            dockerfile: Dockerfile
+            args:
+                - DOTNET_INSTALLED_VERSION=${DOTNET_INSTALLED_VERSION}
+                - DOTNET_TIME_ZONE=${DOTNET_TIME_ZONE}
+                - DOTNET_LANG_NAME=${DOTNET_LANG_NAME}
+                - DOTNET_LANG_INPUTFILE=${DOTNET_LANG_INPUTFILE}
+                - DOTNET_LANG_CHARMAP=${DOTNET_LANG_CHARMAP}
+                - DEBIAN_FRONTEND=${DOTNET_DEBIAN_FRONTEND}
+                - DOTNET_POSTGRESQL_CLIENT_HOME=${DOTNET_POSTGRESQL_CLIENT_HOME}
+                - DOTNET_POSTGRESQL_CLIENT_VERSION=${POSTGRES_VERSION}
+                - POSTGRES_DATA_BACKUP_PATH=:${POSTGRES_DATA_BACKUP_PATH}
+                - DOTNET_PACKAGES_PATH=${DOTNET_PACKAGES_PATH}
+        image: ${CONTAINER_AUTHOR}/${PROJECT_NAME}/dotnet:${DOTNET_IMAGE_VERSION}
+        container_name: ${PROJECT_NAME}_backend
+        env_file:
+            - ./.env
+        environment:
+            - DOTNET_LANG_NAME=${DOTNET_LANG_NAME}
+            - PGPASSWORD=${POSTGRES_PASSWORD}
+            - DOTNET_POSTGRES_USER=${POSTGRES_USER}
+            - DOTNET_POSTGRES_HOST_IP=${POSTGRES_HOST_IP}
+            - DOTNET_POSTGRES_PORT=${POSTGRES_INNER_PORT}
+        volumes:
+            # - ./NotesApi:/app
+            - ./data/postgresql/pgdata_backup/v${POSTGRES_VERSION}:${POSTGRES_DATA_BACKUP_PATH}
+            - ./logs/backend:/app/production/backend/Logs
+        ports:
+            - ${DOTNET_EXTERNAL_HTTP_PORT}:${DOTNET_INNER_HTTP_PORT}
+            - ${DOTNET_EXTERNAL_HTTPS_PORT}:${DOTNET_INNER_HTTPS_PORT}
+            - ${DOTNET_TEST_EXTERNAL_HTTP_PORT}:${DOTNET_TEST_INNER_HTTP_PORT}
+        depends_on:
+          - postgres_db
+        networks:
+            web_note_api_common_net:
+                ipv4_address: ${DOTNET_HOST_IP}
+        tty: true
+        restart: on-failure:3
+
     postgres_db:
         build:
             context: ./conf/postgresql
@@ -9,7 +51,7 @@ services:
                 - POSTGRES_LANG_NAME=${POSTGRES_LANG_NAME}
                 - POSTGRES_LANG_INPUTFILE=${POSTGRES_LANG_INPUTFILE}
                 - POSTGRES_LANG_CHARMAP=${POSTGRES_LANG_CHARMAP}
-        image: ${CONTAINER_AUTHOR}/${PROJECT_NAME}/postgresql:${POSTGRES_IMAGE_VERSION}
+        image: ${CONTAINER_AUTHOR}/${PROJECT_NAME}/postgresql:${POSTGRES_VERSION}
         container_name: ${PROJECT_NAME}_postgresql
         env_file:
             - ${ENV_FILE_PATH}

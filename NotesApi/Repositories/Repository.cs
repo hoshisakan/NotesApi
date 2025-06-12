@@ -17,7 +17,7 @@ namespace NotesApi.Repositories.Repositories
         public Repository(NotesContext db)
         {
             _db = db;
-            this.dbSet = _db.Set<T>();
+            dbSet = _db.Set<T>();
         }
 
         public async Task AddAsync(T entity)
