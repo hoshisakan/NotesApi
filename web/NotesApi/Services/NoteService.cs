@@ -15,6 +15,11 @@ namespace NotesApi.Services
             _unitOfWork = unitOfWork;
         }
 
+        public async Task<List<Note>> GetAllNotesByUserIdAsync(int userId)
+        {
+            return await _unitOfWork.Notes.GetAllAsync(n => n.UserId == userId);
+        }
+
         public async Task<List<Note>> GetAllNotesAsync()
         {
             return await _unitOfWork.Notes.GetAllAsync();

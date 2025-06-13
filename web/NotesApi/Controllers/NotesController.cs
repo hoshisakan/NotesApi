@@ -21,11 +21,27 @@ public class NotesController : ControllerBase
         _noteService = noteService;
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<List<Note>>> GetNotes()
     {
-        _logger.LogInformation("這是一筆從 Controller 發出的 Log 訊息！");
-        return await _noteService.GetAllNotesAsync();
+        try
+        {
+            // 取得目前登入者的 User Id
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim.Value);
+
+            var notes = await _noteService.GetAllNotesByUserIdAsync(userId);
+            return Ok(notes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving notes");
+            return StatusCode(500, "Internal server error");
+        }
     }
     
     [HttpGet("{id}")]

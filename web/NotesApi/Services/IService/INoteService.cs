@@ -8,6 +8,7 @@ namespace NotesApi.Services.IService
 {
     public interface INoteService
     {
+        Task<List<Note>> GetAllNotesByUserIdAsync(int userId);
         Task<List<Note>> GetAllNotesAsync();
         Task<Note?> GetNoteByIdAsync(int id);
         Task CreateNoteAsync(Note note);
