@@ -1,0 +1,1 @@
+docker cp noteapi_backend:/app/production/backend ./data/backend

@@ -72,9 +72,9 @@ RUN mkdir -p ${POSTGRES_DATA_BACKUP_PATH}
 WORKDIR /app
 
 # Copy the project files
-COPY . .
+COPY NotesApi .
 
-WORKDIR /app/NotesApi
+WORKDIR /app
 
 # Restore the project dependencies
 RUN dotnet restore

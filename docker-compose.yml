@@ -35,8 +35,7 @@ services:
 
     backend:
         build:
-            # context: ./conf/dotnet/ubuntu
-            context: ./
+            context: ./web
             dockerfile: Dockerfile
             args:
                 - DOTNET_INSTALLED_VERSION=${DOTNET_INSTALLED_VERSION}
@@ -62,9 +61,8 @@ services:
             - DOTNET_POSTGRES_DB=${DOTNET_POSTGRES_DB}
             - POSTGRES_DATA_BACKUP_PATH=${POSTGRES_DATA_BACKUP_PATH}
         volumes:
-            # - ./NotesApi:/app
             - ./data/postgresql/pgdata_backup/v${POSTGRES_VERSION}:${POSTGRES_DATA_BACKUP_PATH}
-            - ./logs/backend:/app/production/backend/Logs
+            - ./logs/backend:/var/log/backend
         ports:
             - ${DOTNET_EXTERNAL_HTTP_PORT}:${DOTNET_INNER_HTTP_PORT}
             - ${DOTNET_EXTERNAL_HTTPS_PORT}:${DOTNET_INNER_HTTPS_PORT}
@@ -100,7 +98,6 @@ services:
             - POSTGRES_LANG_NAME=${POSTGRES_LANG_NAME}
         volumes:
             - ./data/postgresql/pgdata:/var/lib/postgresql/data
-            # - ./data/postgresql/pgdata_backup:${POSTGRES_DATA_BACKUP_PATH}
         ports:
             - ${POSTGRES_EXTERNAL_PORT}:${POSTGRES_INNER_PORT}
         networks:

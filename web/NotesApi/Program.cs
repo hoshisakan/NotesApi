@@ -13,14 +13,21 @@ using Quartz;
 using NotesApi.Services.Jobs;
 
 // 設定 Serilog，每小時一個 log 檔案
-Log.Logger = new LoggerConfiguration()
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File("Logs/log-.txt", 
-        rollingInterval: RollingInterval.Hour,              // ✅ 每小時一個檔案
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-    .CreateLogger();
+// Log.Logger = new LoggerConfiguration()
+//     .Enrich.FromLogContext()
+//     .WriteTo.Console()
+//     .WriteTo.File("Logs/log-.txt", 
+//         rollingInterval: RollingInterval.Hour,              // ✅ 每小時一個檔案
+//         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+//     .CreateLogger();
 
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(configuration)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
