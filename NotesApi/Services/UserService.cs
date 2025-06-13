@@ -36,6 +36,7 @@ namespace NotesApi.Services
 
         public async Task CreateUserAsync(User user)
         {
+            
             await _unitOfWork.Users.AddAsync(user);
             await _unitOfWork.SaveAsync();
         }

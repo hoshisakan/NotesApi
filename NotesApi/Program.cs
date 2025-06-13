@@ -9,6 +9,8 @@ using NotesApi.Services.IService;
 using NotesApi.Services;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Quartz;
+using NotesApi.Services.Jobs;
 
 // 設定 Serilog，每小時一個 log 檔案
 Log.Logger = new LoggerConfiguration()
@@ -31,6 +33,28 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 
 builder.Services.AddDbContext<NotesContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddQuartz(q =>
+{
+    q.UseMicrosoftDependencyInjectionJobFactory();
+
+    var jobKey = new JobKey("PostgresBackupJob");
+
+    q.AddJob<PostgresBackupJob>(opts => opts.WithIdentity(jobKey));
+
+    // q.AddTrigger(t => t
+    //     .ForJob(jobKey)
+    //     .WithIdentity("PostgresBackupJob-trigger")
+    //     .WithCronSchedule("0 * * ? * *")); // ⏱️ 每分鐘執行一次
+
+    q.AddTrigger(t => t
+        .ForJob(jobKey)
+        .WithIdentity("PostgresBackupJob-trigger")
+        .WithCronSchedule("0 0/30 * ? * *")); // 每半小時執行一次
+});
+
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
