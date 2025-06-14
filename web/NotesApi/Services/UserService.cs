@@ -123,65 +123,61 @@ namespace NotesApi.Services
             };
         }
 
-        public async Task<TokenResponseDto?> RefreshAsync(TokenResponseDto tokenDto)
+        public async Task<TokenResponseDto?> RefreshAsync(TokenRequestDto tokenDto)
         {
-            _logger.LogInformation($"Attempting to refresh token: {tokenDto.RefreshToken}", tokenDto.RefreshToken);
-            _logger.LogInformation($"Attempting to access token: {tokenDto.AccessToken}", tokenDto.AccessToken);
             if (string.IsNullOrEmpty(tokenDto.RefreshToken))
             {
                 _logger.LogWarning("Refresh token is null or empty.");
                 return null;
             }
-            _logger.LogInformation("Fetching user with refresh token.");
-            // Find user by refresh token
+
             var user = await _unitOfWork.Users
-                .GetFirstOrDefaultAsync(u =>
-                    u.RefreshTokens.Any(rt => rt.Token == tokenDto.RefreshToken),
+                .GetFirstOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.Token == tokenDto.RefreshToken),
                     includeProperties: "RefreshTokens");
 
-            _logger.LogInformation($"User fetched: {user?.Username}", user?.Username);
-            // If user not found or no refresh tokens, return null
-            if (user == null) return null;
-
-            var refreshToken = user.RefreshTokens.First(rt => rt.Token == tokenDto.RefreshToken);
-
-            _logger.LogInformation($"Refresh token found for user {user.Username}: {refreshToken.Token}");
-
-            bool IsRevoked = refreshToken.IsRevoked;
-            bool IsExpired = refreshToken.ExpiresAt < DateTime.UtcNow;
-            _logger.LogInformation($"Refresh token status for user {user.Username} - IsRevoked: {IsRevoked}, IsExpired: {IsExpired}");
-
-
-            if (IsRevoked || IsExpired)
+            if (user == null)
             {
-                _logger.LogWarning($"Refresh token expired or revoked for user {user.Username}: {refreshToken.Token}");
+                _logger.LogWarning("No user found with provided refresh token.");
                 return null;
             }
 
-            // Revoke old token
-            refreshToken.IsRevoked = true;
+            var refreshToken = user.RefreshTokens.FirstOrDefault(rt => rt.Token == tokenDto.RefreshToken);
 
-            _logger.LogInformation($"Revoked old refresh token for user {user.Username}: {refreshToken.Token}");
-
-            // Generate new token
-            var newRefreshToken = _jwtService.GenerateRefreshToken();
-
-            _logger.LogInformation($"Generated new refresh token for user {user.Username}: {newRefreshToken}");
-
-            user.RefreshTokens.Add(new RefreshToken
+            if (refreshToken == null || refreshToken.IsRevoked || refreshToken.ExpiresAt < DateTime.UtcNow)
             {
-                Token = newRefreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(7)
-            });
+                _logger.LogWarning("Refresh token expired or revoked.");
+                return null;
+            }
+            _logger.LogInformation($"User {user.Username} is refreshing tokens.");
 
-            await _unitOfWork.SaveAsync();
-
+            // 產生新的 access token
             var newAccessToken = _jwtService.GenerateAccessToken(user);
+
+            // 判斷是否要更新 refresh token（例如只剩 1 天有效期時再換）
+            var daysLeft = (refreshToken.ExpiresAt - DateTime.UtcNow).TotalDays;
+            string newRefreshTokenString = null;
+
+            if (daysLeft < 1)  // 剩一天就更新 refresh token
+            {
+                // 作廢舊的 refresh token
+                refreshToken.IsRevoked = true;
+
+                // 產生新的 refresh token
+                newRefreshTokenString = _jwtService.GenerateRefreshToken();
+
+                user.RefreshTokens.Add(new RefreshToken
+                {
+                    Token = newRefreshTokenString,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7)
+                });
+
+                await _unitOfWork.SaveAsync();
+            }
 
             return new TokenResponseDto
             {
                 AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken
+                RefreshToken = newRefreshTokenString ?? tokenDto.RefreshToken // 若沒更新，回傳原本的
             };
         }
 

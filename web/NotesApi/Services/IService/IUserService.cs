@@ -16,7 +16,7 @@ namespace NotesApi.Services.IService
         Task DeleteUserAsync(int id);
         Task<bool> RegisterAsync(RegisterDto registerDto);
         Task<TokenResponseDto?> LoginAsync(LoginDto dto);
-        Task<TokenResponseDto?> RefreshAsync(TokenResponseDto tokenDto);
+        Task<TokenResponseDto?> RefreshAsync(TokenRequestDto tokenDto);
         bool CheckTokenValidity(string token);
         Task<bool> UserExistsAsync(string username);
     }

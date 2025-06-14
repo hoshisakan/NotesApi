@@ -1,11 +1,37 @@
-import React, { useState } from 'react';
-import { login } from '../api/api';
+import React, { useState, useEffect } from 'react';
+import { login, checkToken } from '../api/api';
 
 export default function LoginPage({ onLoginSuccess, onGoRegister }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [checkingToken, setCheckingToken] = useState(true);
+
+    useEffect(() => {
+        async function verifyToken() {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                try {
+                    const checkResponse = await checkToken(token);
+                    const checkStatus = checkResponse.status;
+
+                    if (checkStatus !== 200) {
+                        throw new Error('Token is invalid');
+                    }
+                    console.log('Token is valid:', checkStatus);
+                    // token 有效，直接呼叫 onLoginSuccess 並跳過登入頁
+                    onLoginSuccess(token);
+                } catch (err) {
+                    // token 無效，清除並停留在登入頁
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                }
+            }
+            setCheckingToken(false);
+        }
+        verifyToken();
+    }, [onLoginSuccess]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -13,6 +39,7 @@ export default function LoginPage({ onLoginSuccess, onGoRegister }) {
         setLoading(true);
         try {
             const res = await login(username, password);
+
             setLoading(false);
             onLoginSuccess(res);
         } catch (err) {
@@ -20,6 +47,10 @@ export default function LoginPage({ onLoginSuccess, onGoRegister }) {
             setError('登入失敗，請檢查帳號密碼');
         }
     };
+
+    if (checkingToken) {
+        return <div>正在檢查登入狀態...</div>;
+    }
 
     return (
         <div className="container mt-5" style={{ maxWidth: 400 }}>

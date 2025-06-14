@@ -12,6 +12,7 @@ export default function App() {
     useEffect(() => {
         const validate = async () => {
             const validToken = await checkAndRefreshToken();
+            console.log('Valid token:', validToken);
             if (validToken) {
                 setToken(validToken);
                 setPage('note');

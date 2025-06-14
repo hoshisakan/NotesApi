@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// const API_BASE_URL = '/api';
 const API_BASE_URL = 'http://localhost/api';
-// const API_BASE_URL = 'http://localhost:5002/api';
+// const API_BASE_URL = 'http://lcalhost:5002/api';
 // const API_BASE_URL = 'http://localhost:5000/api';
 
 // 建立 axios 實例
@@ -62,9 +61,10 @@ api.interceptors.response.use(
                 console.log('read refreshToken:', refreshToken);
                 // 同時帶 accessToken 與 refreshToken 到刷新 token API
                 const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-                    accessToken,
                     refreshToken,
                 });
+
+                console.log('刷新 token 成功:', response.data);
 
                 const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
 
@@ -81,6 +81,7 @@ api.interceptors.response.use(
                 originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
                 return api(originalRequest);
             } catch (refreshError) {
+                console.error('刷新 token 失敗:', refreshError);
                 isRefreshing = false;
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
@@ -131,4 +132,9 @@ export async function deleteNote(id) {
     console.log('刪除筆記 ID:', id);
     const response = await api.delete(`/notes/${id}`);
     return response.data;
+}
+
+// 檢查 token 是否有效
+export async function checkToken(token) {
+    return api.post('/auth/check-token', { token });
 }
