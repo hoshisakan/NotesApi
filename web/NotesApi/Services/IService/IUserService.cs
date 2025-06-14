@@ -18,5 +18,6 @@ namespace NotesApi.Services.IService
         Task<TokenResponseDto?> LoginAsync(LoginDto dto);
         Task<TokenResponseDto?> RefreshAsync(TokenResponseDto tokenDto);
         bool CheckTokenValidity(string token);
+        Task<bool> UserExistsAsync(string username);
     }
 }

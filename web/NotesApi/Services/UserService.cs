@@ -23,7 +23,8 @@ namespace NotesApi.Services
 
         public async Task<List<User>> GetAllUsersAsync()
         {
-            return await _unitOfWork.Users.GetAllAsync();
+            return await _unitOfWork.Users.GetAllAsync(
+                includeProperties: "Notes,RefreshTokens");
         }
 
         public async Task<User?> GetUserByIdAsync(int id)
@@ -70,7 +71,8 @@ namespace NotesApi.Services
             var user = new User
             {
                 Username = registerDto.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                Role = "User", // 預設角色為 User
             };
 
             await _unitOfWork.Users.AddAsync(user);
@@ -157,7 +159,7 @@ namespace NotesApi.Services
             }
 
             // Revoke old token
-                refreshToken.IsRevoked = true;
+            refreshToken.IsRevoked = true;
 
             _logger.LogInformation($"Revoked old refresh token for user {user.Username}: {refreshToken.Token}");
 
@@ -186,6 +188,12 @@ namespace NotesApi.Services
         public bool CheckTokenValidity(string token)
         {
             return _jwtService.CheckTokenValidity(token);
+        }
+        
+        public async Task<bool> UserExistsAsync(string username)
+        {
+            return await _unitOfWork.Users
+                .GetFirstOrDefaultAsync(u => u.Username == username, tracked: false) != null;
         }
     }
 }

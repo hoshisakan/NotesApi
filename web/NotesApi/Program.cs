@@ -9,9 +9,11 @@ using NotesApi.Repositories.IRepositories;
 using NotesApi.Services;
 using NotesApi.Services.IService;
 using NotesApi.Services.Jobs;
+using Persistence.DbInitializer;
 using Quartz;
 using Serilog;
 using System.Text;
+using System.Text.Json.Serialization;
 
 // 設定 Serilog，每小時一個 log 檔案
 // Log.Logger = new LoggerConfiguration()
@@ -79,7 +81,12 @@ builder.Services.AddQuartz(q =>
 builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.MaxDepth = 64;  // 可視需求調整
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -156,6 +163,21 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+try
+{
+    // 自動建立資料庫和套用 Migrations
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<NotesContext>();
+        dbContext.Database.Migrate(); // ← 核心語句：會自動套用 Migrations 中的所有變更
+    }
+}
+catch (Exception ex)
+{
+    Log.Error($"An error occurred while migrating or seeding the database or initializing the static file path: {ex.Message}");
+}
+
 app.Run();
 
 public partial class Program { }
