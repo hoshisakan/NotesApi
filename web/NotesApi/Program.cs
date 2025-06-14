@@ -1,16 +1,17 @@
-using Microsoft.EntityFrameworkCore;
-using NotesApi.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using NotesApi.Repositories.IRepositories;
-using NotesApi.Repositories;
-using NotesApi.Services.IService;
-using NotesApi.Services;
 using Microsoft.OpenApi.Models;
-using Serilog;
-using Quartz;
+using NotesApi.Data;
+using NotesApi.Repositories;
+using NotesApi.Repositories.IRepositories;
+using NotesApi.Services;
+using NotesApi.Services.IService;
 using NotesApi.Services.Jobs;
+using Quartz;
+using Serilog;
+using System.Text;
 
 // 設定 Serilog，每小時一個 log 檔案
 // Log.Logger = new LoggerConfiguration()
@@ -47,6 +48,10 @@ builder.Services.AddCors(options =>
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.ListenAnyIP(5000); // 監聽 0.0.0.0:5000
+    serverOptions.ListenAnyIP(5005, listenOptions =>
+    {
+        listenOptions.UseHttps(); // 使用 HTTPS
+    });
 });
 
 builder.Services.AddDbContext<NotesContext>(options =>
