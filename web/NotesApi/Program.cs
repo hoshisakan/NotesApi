@@ -9,7 +9,6 @@ using NotesApi.Repositories.IRepositories;
 using NotesApi.Services;
 using NotesApi.Services.IService;
 using NotesApi.Services.Jobs;
-using Persistence.DbInitializer;
 using Quartz;
 using Serilog;
 using System.Text;
