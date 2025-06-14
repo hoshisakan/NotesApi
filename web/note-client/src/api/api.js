@@ -1,40 +1,130 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5002/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
+// 建立 axios 實例
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: { 'Content-Type': 'application/json' },
+});
+
+// 請求攔截器，自動帶上 token（如果有）
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+function onRefreshed(token) {
+    refreshSubscribers.forEach((cb) => cb(token));
+    refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(cb) {
+    refreshSubscribers.push(cb);
+}
+
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response && error.response.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            if (isRefreshing) {
+                return new Promise((resolve) => {
+                    addRefreshSubscriber((token) => {
+                        originalRequest.headers.Authorization = 'Bearer ' + token;
+                        resolve(api(originalRequest));
+                    });
+                });
+            }
+
+            isRefreshing = true;
+
+            const accessToken = localStorage.getItem('accessToken') || '';
+            const refreshToken = localStorage.getItem('refreshToken');
+
+            try {
+                console.log('read accessToken:', accessToken);
+                console.log('read refreshToken:', refreshToken);
+                // 同時帶 accessToken 與 refreshToken 到刷新 token API
+                const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+                    accessToken,
+                    refreshToken,
+                });
+
+                const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+
+                localStorage.setItem('accessToken', newAccessToken);
+                if (newRefreshToken) {
+                    localStorage.setItem('refreshToken', newRefreshToken);
+                }
+
+                api.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
+
+                onRefreshed(newAccessToken);
+                isRefreshing = false;
+
+                originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
+                return api(originalRequest);
+            } catch (refreshError) {
+                isRefreshing = false;
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/login'; // 或其他登出處理
+                return Promise.reject(refreshError);
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// 登入
 export async function login(username, password) {
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, { username, password });
-    return response.data.accessToken; // 回傳 accessToken
+    const response = await api.post('/auth/login', { username, password });
+    const { accessToken, refreshToken } = response.data;
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    return accessToken;
 }
 
-
+// 註冊
 export async function register(username, password) {
-    const response = await axios.post(`${API_BASE_URL}/auth/register`, { username, password });
-    return response.data; // 回傳註冊結果
-}
-
-export async function fetchNotes(token) {
-    const response = await axios.get(`${API_BASE_URL}/notes`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await api.post('/auth/register', { username, password });
     return response.data;
 }
 
-export const createNote = (token, note) => {
-    return axios.post(`${API_BASE_URL}/notes`, note, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
-};
+// 取得所有筆記
+export async function fetchNotes() {
+    const response = await api.get('/notes');
+    return response.data;
+}
 
-export const updateNote = (token, note) => {
-    return axios.put(`${API_BASE_URL}/notes/${note.id}`, note, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
-};
+// 新增筆記
+export async function createNote(note) {
+    const response = await api.post('/notes', note);
+    return response.data;
+}
 
-export async function deleteNote(token, id) {
-    const response = await axios.delete(`${API_BASE_URL}/notes/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+// 更新筆記
+export async function updateNote(note) {
+    const response = await api.put(`/notes/${note.id}`, note);
+    return response.data;
+}
+
+// 刪除筆記
+export async function deleteNote(id) {
+    const response = await api.delete(`/notes/${id}`);
     return response.data;
 }

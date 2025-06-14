@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { fetchNotes, createNote, updateNote, deleteNote } from '../api/api';
+import { fetchNotes, createNote, updateNote, deleteNote } from '../api/backup/api';
 
 export default function NotesPage({ token, onLogout }) {
     const [notes, setNotes] = useState([]);

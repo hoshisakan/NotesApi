@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { register } from '../api/api';
+import { register } from '../api/backup/api';
 
 export default function RegisterPage({ onRegisterSuccess, onGoLogin }) {
     const [username, setUsername] = useState('');
