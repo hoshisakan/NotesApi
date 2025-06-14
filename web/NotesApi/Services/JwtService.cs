@@ -29,7 +29,8 @@ public class JwtService : IJwtService
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(15),
+            // expires: DateTime.UtcNow.AddMinutes(15)
+            expires: DateTime.UtcNow.AddMinutes(1),
             signingCredentials: creds
         );
 
@@ -39,5 +40,27 @@ public class JwtService : IJwtService
     public string GenerateRefreshToken()
     {
         return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+    }
+
+    public bool CheckTokenValidity(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
+        try
+        {
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero // Disable clock skew
+            }, out SecurityToken validatedToken);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
