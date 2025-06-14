@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { login } from '../api/backup/api';
+import { login } from '../api/api';
 
 export default function LoginPage({ onLoginSuccess, onGoRegister }) {
     const [username, setUsername] = useState('');

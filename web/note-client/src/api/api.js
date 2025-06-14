@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost/api';
+// const API_BASE_URL = 'http://localhost:5002/api';
+// const API_BASE_URL = 'http://localhost:5000/api';
 
 // 建立 axios 實例
 const api = axios.create({
@@ -125,6 +128,7 @@ export async function updateNote(note) {
 
 // 刪除筆記
 export async function deleteNote(id) {
+    console.log('刪除筆記 ID:', id);
     const response = await api.delete(`/notes/${id}`);
     return response.data;
 }

@@ -82,6 +82,8 @@ RUN dotnet restore
 # # # Build the app
 RUN dotnet publish -c Release -o /app/production/backend
 
+COPY certs /app/production/backend/certs
+
 # # WORKDIR backend directory
 # # For production
 WORKDIR /app/production/backend

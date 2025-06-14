@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { checkAndRefreshToken } from './utils/authHelper';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import NotesPage from './components/NotesPage';
+import { checkAndRefreshToken } from './utils/auth';
 
 export default function App() {
     const [token, setToken] = useState(null);

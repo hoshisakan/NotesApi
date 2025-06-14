@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { fetchNotes, createNote, updateNote, deleteNote } from '../api/backup/api';
+import { fetchNotes, createNote, updateNote, deleteNote } from '../api/api';
 
 export default function NotesPage({ token, onLogout }) {
     const [notes, setNotes] = useState([]);
@@ -13,7 +13,7 @@ export default function NotesPage({ token, onLogout }) {
         try {
             setLoading(true);
             const data = await fetchNotes(token);
-            setNotes(data);
+            setNotes(data.$values || []);
             if (data.length > 0) setSelectedNote(data[0]);
             setLoading(false);
         } catch (err) {
@@ -49,10 +49,10 @@ export default function NotesPage({ token, onLogout }) {
             if (selectedNote.id) {
                 console.log('更新筆記:', selectedNote);
                 // 更新
-                await updateNote(token, selectedNote);
+                await updateNote(selectedNote);
             } else {
                 // 新增
-                const res = await createNote(token, selectedNote);
+                const res = await createNote(selectedNote);
                 console.log('新增回傳 res:', res);
                 console.log('HTTP 狀態碼:', res.status); // 你會看到 201
                 if (res.status === 201) {
@@ -71,12 +71,13 @@ export default function NotesPage({ token, onLogout }) {
 
     // 刪除筆記
     const onDelete = async () => {
+        console.log('刪除筆記:', selectedNote?.id);
         if (!selectedNote?.id) return alert('請選擇一筆筆記刪除');
         if (!window.confirm('確定刪除此筆記嗎？')) return;
 
         try {
             setLoading(true);
-            await deleteNote(token, selectedNote.id);
+            await deleteNote(selectedNote.id);
             await loadNotes();
             setSelectedNote(null);
             setError('');

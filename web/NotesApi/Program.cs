@@ -40,7 +40,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .WithOrigins("http://localhost:3000") // React 開發伺服器
+            .WithOrigins("http://localhost:3000") // ✅ 單一 origin
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
@@ -49,10 +49,12 @@ builder.Services.AddCors(options =>
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.ListenAnyIP(5000); // 監聽 0.0.0.0:5000
-    serverOptions.ListenAnyIP(5005, listenOptions =>
-    {
-        listenOptions.UseHttps(); // 使用 HTTPS
-    });
+    // serverOptions.ListenAnyIP(5005, listenOptions =>
+    // {
+        // listenOptions.UseHttps(); // 使用 HTTPS
+        // listenOptions.UseHttps("D:\\Files\\Project\\NotesApi\\web\\certs\\cert.pfx", "123456"); // 使用 HTTPS，請替換為你的憑證檔案和密碼
+        // listenOptions.UseHttps("./certs/cert.pfx", "123456"); // 使用 HTTPS，請替換為你的憑證檔案和密碼
+    // });
 });
 
 builder.Services.AddDbContext<NotesContext>(options =>
@@ -155,10 +157,11 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-app.UseCors("AllowReactApp");
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection;
+app.UseRouting();
+app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

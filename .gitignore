@@ -57,3 +57,5 @@ bin
 obj
 logs
 postgresql_resotre_command.txt
+backup
+certs
