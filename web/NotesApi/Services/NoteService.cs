@@ -17,7 +17,8 @@ namespace NotesApi.Services
 
         public async Task<List<Note>> GetAllNotesByUserIdAsync(int userId)
         {
-            return await _unitOfWork.Notes.GetAllAsync(n => n.UserId == userId);
+            //return await _unitOfWork.Notes.GetAllAsync(filter: n => n.UserId == userId, includeProperties: "User");
+            return await _unitOfWork.Notes.GetAllAsync(filter: n => n.UserId == userId);
         }
 
         public async Task<List<Note>> GetAllNotesAsync()

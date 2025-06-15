@@ -26,7 +26,7 @@ public class JwtService : IJwtService
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        double tokenExpirationMinutes = double.TryParse(_config["Jwt:TokenExpirationMinutes"], out var minutes) ? minutes : 60; // 預設為 60 分鐘
+        double tokenExpirationMinutes = double.TryParse(_config["Jwt:UserAccessTokenExpiration"], out var minutes) ? minutes : 60; // 預設為 60 分鐘
         if (tokenExpirationMinutes <= 0)
         {
             throw new ArgumentException("Token expiration time must be greater than zero.");
@@ -34,7 +34,7 @@ public class JwtService : IJwtService
 
         if (user.Role == "Admin")
         {
-            tokenExpirationMinutes = double.TryParse(_config["Jwt:AdminAccessTokenExpirationMinutes"], out var adminMinutes) ? adminMinutes : 5; // 管理員預設為 120 分鐘
+            tokenExpirationMinutes = double.TryParse(_config["Jwt:AdminAccessTokenExpirationMinutes"], out var adminMinutes) ? adminMinutes : 5; // 管理員預設為 5 分鐘
             if (adminMinutes <= 0)
             {
                 throw new ArgumentException("Admin token expiration time must be greater than zero.");
